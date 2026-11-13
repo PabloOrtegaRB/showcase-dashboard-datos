@@ -1,0 +1,11 @@
+﻿Folio;Fecha;Cliente;Comuna;Servicio;Prioridad;Estado;Monto (CLP);Días de resolución;Satisfacción
+;2026-10-05;Panadería Maqui Ltda.;Ñuñoa;Mantención preventiva;Media;Completada;$185.000;3;5
+;06-10-2026;Viña Pangue SpA;Las Condes;climatizacion;ALTA;Completada;1.250.000;2;4
+;2026-10-08;Taller Mañío Ltda.;Maipú;Electricidad;Crítica;En curso;420000;;
+;2026-10-09;Lavandería Chilco SpA;Providencia;Inspección;Baja;Completada;abc;4;5
+;2026-10-12;Ferretería Quila S.A.;Valparaíso;Mantención correctiva;Media;Programada;310000;;
+;2026-10-14;Óptica Copihue Ltda.;Santiago;MANTENCION_CORRECTIVA;Alta;Completada;275000;1;
+;2026-10-16;Librería Laurel SpA;Quilicura;Climatización;Media;Completada;690000;;4
+;2026-10-20;Veterinaria Pitra Ltda.;La Florida;Electricidad;Baja;Cancelada;150000;;
+;2026-10-22;Kinesiología Radal SpA;Puente Alto;Inspección;Media;Completada;98000;6;3
+;31-10-2026;Heladería Lúcuma Ltda.;San Bernardo;Mantención preventiva;Alta;Programada;240000;;

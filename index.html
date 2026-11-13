@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Panel de indicadores demostrativo: órdenes de servicio, ingresos, plazos y satisfacción, con filtros, gráficos SVG propios, edición y CSV.">
+  <meta name="color-scheme" content="light dark">
+  <title>Panel de indicadores · Valdora (demostrativo)</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/panel.css">
+  <script src="assets/js/nucleo.js" defer></script>
+  <script src="datos/ordenes-semilla.js" defer></script>
+  <script src="assets/js/validacion.js" defer></script>
+  <script src="assets/js/csv.js" defer></script>
+  <script src="assets/js/almacen.js" defer></script>
+  <script src="assets/js/indicadores.js" defer></script>
+  <script src="assets/js/graficos.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <p class="demo-aviso"><strong>Proyecto demostrativo — desarrollo propio, no asociado a un cliente real.</strong> Valdora es una empresa ficticia y todos los datos son inventados.</p>
+
+  <header class="cabecera">
+    <div class="contenedor cabecera-fila">
+      <div>
+        <h1>Panel de indicadores de servicios técnicos</h1>
+        <p>Órdenes de servicio, ingresos, cumplimiento de plazos y satisfacción de clientes.</p>
+      </div>
+      <button type="button" class="boton fantasma" id="boton-restablecer">Restablecer datos de ejemplo</button>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor" tabindex="-1">
+    <p id="aviso-almacen" class="aviso-almacen" role="status" hidden>Este navegador no permite guardar datos: puedes usar el panel, pero los cambios se perderán al recargar la página.</p>
+
+    <section class="filtros" aria-label="Filtros">
+      <div class="filtro">
+        <label for="filtro-periodo">Período</label>
+        <select id="filtro-periodo">
+          <option value="12">Últimos 12 meses</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="3">Último trimestre</option>
+          <option value="1">Último mes</option>
+          <option value="todo">Todo el historial</option>
+          <option value="personalizado">Rango personalizado</option>
+        </select>
+      </div>
+      <div class="filtro filtro-rango" id="filtro-rango" hidden>
+        <div class="filtro"><label for="filtro-desde">Desde</label><select id="filtro-desde"></select></div>
+        <div class="filtro"><label for="filtro-hasta">Hasta</label><select id="filtro-hasta"></select></div>
+      </div>
+      <div class="filtro"><label for="filtro-servicio">Servicio</label><select id="filtro-servicio"></select></div>
+      <div class="filtro"><label for="filtro-estado">Estado</label><select id="filtro-estado"></select></div>
+      <div class="filtro"><label for="filtro-comuna">Comuna</label><select id="filtro-comuna"></select></div>
+      <div class="filtro filtro-busqueda"><label for="filtro-texto">Buscar</label><input id="filtro-texto" type="search" placeholder="Cliente o folio" autocomplete="off"></div>
+      <button type="button" class="boton secundario" id="limpiar-filtros">Limpiar filtros</button>
+    </section>
+    <p class="periodo-texto" id="periodo-texto" role="status"></p>
+
+    <section class="kpis" aria-label="Indicadores principales">
+      <div class="kpi"><p class="kpi-etiqueta">Órdenes</p><p class="kpi-valor" id="kpi-ordenes">—</p><p class="kpi-detalle" id="kpi-ordenes-detalle"></p></div>
+      <div class="kpi"><p class="kpi-etiqueta">Ingresos</p><p class="kpi-valor" id="kpi-ingresos">—</p><p class="kpi-detalle">de órdenes completadas</p></div>
+      <div class="kpi"><p class="kpi-etiqueta">Ticket promedio</p><p class="kpi-valor" id="kpi-ticket">—</p><p class="kpi-detalle">por orden completada</p></div>
+      <div class="kpi"><p class="kpi-etiqueta">Cumplimiento de plazo</p><p class="kpi-valor" id="kpi-cumplimiento">—</p><p class="kpi-detalle" id="kpi-cumplimiento-detalle"></p></div>
+      <div class="kpi"><p class="kpi-etiqueta">Tiempo de resolución</p><p class="kpi-valor" id="kpi-tiempo">—</p><p class="kpi-detalle">promedio desde la solicitud</p></div>
+      <div class="kpi"><p class="kpi-etiqueta">Satisfacción</p><p class="kpi-valor" id="kpi-satisfaccion">—</p><p class="kpi-detalle" id="kpi-satisfaccion-detalle"></p></div>
+    </section>
+
+    <div class="rejilla">
+      <figure class="grafico doble" id="grafico-ingresos" aria-labelledby="t-ingresos">
+        <figcaption><h2 id="t-ingresos">Ingresos por mes</h2><p>Monto de las órdenes completadas, según el mes de la solicitud.</p></figcaption>
+        <div class="area-grafico"><div class="lienzo"></div><div class="tooltip" aria-hidden="true" hidden></div></div>
+        <details class="ver-datos"><summary>Ver tabla de datos</summary><div class="tabla-datos"></div></details>
+      </figure>
+      <figure class="grafico" id="grafico-servicios" aria-labelledby="t-servicios">
+        <figcaption><h2 id="t-servicios">Órdenes por servicio</h2><p>Haz clic en una barra para filtrar.</p></figcaption>
+        <div class="area-grafico"><div class="lienzo"></div><div class="tooltip" aria-hidden="true" hidden></div></div>
+        <details class="ver-datos"><summary>Ver tabla de datos</summary><div class="tabla-datos"></div></details>
+      </figure>
+      <figure class="grafico doble" id="grafico-plazos" aria-labelledby="t-plazos">
+        <figcaption><h2 id="t-plazos">Cumplimiento de plazo por mes</h2><p>Órdenes completadas dentro del plazo de su prioridad (crítica 1 día, alta 3, media 5, baja 10).</p></figcaption>
+        <div class="area-grafico"><div class="lienzo"></div><div class="tooltip" aria-hidden="true" hidden></div></div>
+        <details class="ver-datos"><summary>Ver tabla de datos</summary><div class="tabla-datos"></div></details>
+      </figure>
+      <figure class="grafico" id="grafico-comunas" aria-labelledby="t-comunas">
+        <figcaption><h2 id="t-comunas">Ingresos por comuna</h2><p>Haz clic en una barra para filtrar.</p></figcaption>
+        <div class="area-grafico"><div class="lienzo"></div><div class="tooltip" aria-hidden="true" hidden></div></div>
+        <details class="ver-datos"><summary>Ver tabla de datos</summary><div class="tabla-datos"></div></details>
+      </figure>
+      <figure class="grafico completo" id="grafico-estados" aria-labelledby="t-estados">
+        <figcaption><h2 id="t-estados">Órdenes por estado</h2><p>Proporción del total. Haz clic en un bloque para filtrar.</p></figcaption>
+        <div class="area-grafico"><div class="lienzo"></div><div class="tooltip" aria-hidden="true" hidden></div></div>
+        <ul class="leyenda" aria-label="Leyenda"></ul>
+        <details class="ver-datos"><summary>Ver tabla de datos</summary><div class="tabla-datos"></div></details>
+      </figure>
+    </div>
+
+    <section class="tabla-tarjeta" aria-labelledby="t-ordenes">
+      <div class="tabla-cab">
+        <div>
+          <h2 id="t-ordenes">Órdenes de servicio</h2>
+          <p class="resumen-tabla" id="resumen-tabla"></p>
+        </div>
+        <div class="acciones-tabla">
+          <button type="button" class="boton primario" id="boton-nueva">Nueva orden</button>
+          <button type="button" class="boton secundario" id="boton-importar">Importar CSV</button>
+          <button type="button" class="boton secundario" id="boton-exportar">Exportar CSV</button>
+          <input type="file" id="archivo-csv" accept=".csv,text/csv" hidden>
+        </div>
+      </div>
+      <p class="anuncio" id="anuncio" role="status"></p>
+      <div class="tabla-contenedor">
+        <table class="tabla" id="tabla-ordenes">
+          <caption class="oculto">Órdenes de servicio filtradas; los encabezados permiten ordenar.</caption>
+          <thead><tr id="encabezado-tabla"></tr></thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+      <div class="paginacion">
+        <label class="por-pagina" for="por-pagina">Filas por página
+          <select id="por-pagina"><option>10</option><option>25</option><option>50</option></select>
+        </label>
+        <div class="paginacion-controles">
+          <button type="button" class="boton secundario" id="pagina-anterior">Anterior</button>
+          <span id="pagina-actual" aria-live="polite"></span>
+          <button type="button" class="boton secundario" id="pagina-siguiente">Siguiente</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie contenedor">
+    <p>Los cambios se guardan solo en este navegador. Datos generados con <code>scripts/generar_datos.py</code> (semilla fija).</p>
+    <p>Diseño y desarrollo: Pablo Ortega Rubio · <a href="https://github.com/PabloOrtegaRB">github.com/PabloOrtegaRB</a></p>
+  </footer>
+
+  <dialog id="dialogo-orden" aria-labelledby="titulo-formulario">
+    <form id="form-orden" class="dialogo-cuerpo" novalidate>
+      <h2 id="titulo-formulario">Nueva orden</h2>
+      <p class="resumen-errores" id="resumen-errores" role="alert" hidden></p>
+      <div class="campos">
+        <div class="campo">
+          <label for="campo-fecha">Fecha de solicitud</label>
+          <input id="campo-fecha" name="fecha" type="date" required aria-describedby="error-fecha">
+          <p class="error-campo" id="error-fecha"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-comuna">Comuna</label>
+          <select id="campo-comuna" name="comuna" aria-describedby="error-comuna"></select>
+          <p class="error-campo" id="error-comuna"></p>
+        </div>
+        <div class="campo ancho">
+          <label for="campo-cliente">Cliente</label>
+          <input id="campo-cliente" name="cliente" type="text" required minlength="3" maxlength="80" autocomplete="off" aria-describedby="error-cliente">
+          <p class="error-campo" id="error-cliente"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-servicio">Servicio</label>
+          <select id="campo-servicio" name="servicio" aria-describedby="error-servicio"></select>
+          <p class="error-campo" id="error-servicio"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-prioridad">Prioridad</label>
+          <select id="campo-prioridad" name="prioridad" aria-describedby="error-prioridad"></select>
+          <p class="error-campo" id="error-prioridad"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-estado">Estado</label>
+          <select id="campo-estado" name="estado" aria-describedby="error-estado"></select>
+          <p class="error-campo" id="error-estado"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-monto">Monto (CLP)</label>
+          <input id="campo-monto" name="monto" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej.: 250.000" aria-describedby="error-monto">
+          <p class="error-campo" id="error-monto"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-dias">Días de resolución</label>
+          <input id="campo-dias" name="dias_resolucion" type="number" min="0" max="365" step="1" inputmode="numeric" aria-describedby="ayuda-cierre error-dias_resolucion">
+          <p class="error-campo" id="error-dias_resolucion"></p>
+        </div>
+        <div class="campo">
+          <label for="campo-satisfaccion">Satisfacción</label>
+          <select id="campo-satisfaccion" name="satisfaccion" aria-describedby="ayuda-cierre error-satisfaccion">
+            <option value="">Sin respuesta</option><option value="1">1 de 5</option><option value="2">2 de 5</option>
+            <option value="3">3 de 5</option><option value="4">4 de 5</option><option value="5">5 de 5</option>
+          </select>
+          <p class="error-campo" id="error-satisfaccion"></p>
+        </div>
+      </div>
+      <p class="ayuda" id="ayuda-cierre">Los días de resolución y la satisfacción se registran cuando la orden está completada.</p>
+      <div class="acciones-dialogo">
+        <button type="button" class="boton secundario" id="cancelar-formulario">Cancelar</button>
+        <button type="submit" class="boton primario">Guardar orden</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-confirmar" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-mensaje">
+    <form method="dialog" class="dialogo-cuerpo">
+      <h2 id="confirmar-titulo"></h2>
+      <p id="confirmar-mensaje"></p>
+      <div class="acciones-dialogo">
+        <button type="submit" value="cancelar" class="boton secundario" id="confirmar-cancelar">Cancelar</button>
+        <button type="submit" value="aceptar" class="boton peligro" id="confirmar-aceptar">Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-informe" aria-labelledby="informe-titulo">
+    <div class="dialogo-cuerpo">
+      <h2 id="informe-titulo">Resultado de la importación</h2>
+      <p class="informe-archivo"><span>Archivo:</span> <code id="informe-archivo"></code></p>
+      <p id="informe-resumen"></p>
+      <ul class="informe-cifras" id="informe-cifras"></ul>
+      <ol class="informe-errores" id="informe-errores"></ol>
+      <div class="acciones-dialogo">
+        <button type="button" class="boton primario" id="cerrar-informe">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
